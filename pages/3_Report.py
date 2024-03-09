@@ -42,8 +42,23 @@ with tab3:
     logs_nested_list = list(map(split_string, logs_list_string))
     
     # convert nested list info into dataframe
-    log_df = pd.DataFrame(logs_nested_list, columns=['Name', 'Role', 'Timestamp'])
+    logs_df = pd.DataFrame(logs_nested_list, columns=['Name', 'Role', 'Timestamp'])
 
-    st.write(log_df)
+    # step 3: time based Analysis or Report
+    logs_df['Timestamp'] = pd.to_datetime(logs_df['Timestamp'])
+    logs_df['Date'] = logs_df['Timestamp'].dt.date
 
+    # step 3.1: Calculate Intime and OutTime
+    # Intime: At which person is first detected in that day (min Timestamp of the date)
+    # OutTime: At which person is last detected in that day (max Timestamp of the date)
+    report_df = logs_df.groupby(by=['Date', 'Name', 'Role']).agg(
+        In_time = pd.NamedAgg('Timestamp', 'min'), # in time
+        Out_time = pd.NamedAgg('Timestamp', 'max') # out time
+    ).reset_index()
+
+    report_df['In_time'] = pd.to_datetime(report_df['In_time'])
+    report_df['Out_time'] = pd.to_datetime(report_df['Out_time'])    
+
+    report_df['Duration'] = report_df['Out_time'] - report_df['In_time']
+    st.dataframe(report_df)
 
